@@ -1,13 +1,26 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: "Gist Sync File"
+description: "Creates, updates, deletes or downloads a file from a gist"
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  gistPat:
+    description: "personal access token with read/write access for the gist"
     required: true
-    default: '1000'
+  action:
+    description: 'action to perform, either "create", "delete", "update" or "download"'
+    required: true
+  filename:
+    description: "name of the file containing the content to upload or download"
+    required: true
+  gistId:
+    description: "id of the gist - only required for delete, update and download"
+    required: false
+  createIfNotExists:
+    description: "optional, used with the download action. Create the gist if it does not exist, you must supply a filename if setting this to true"
+    required: false
 outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
+  fileContent:
+    description: "content of the file for download and update actions"
+  gistId:
+    description: "id of the gist for create action"
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: "node16"
+  main: "dist/index.js"

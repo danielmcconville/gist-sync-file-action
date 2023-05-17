@@ -1,25 +1,56 @@
-name: "units-test"
+name: 'units-test'
 on:
   pull_request:
   push:
     branches:
       - main
       - 'releases/*'
+env:
+  fileName: 'test.json'
 
 jobs:
   # unit tests
   units:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - run: npm ci
-    - run: npm test
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - run: npm test
+    env:
+      GIST_PAT: ${{ secrets.GIST_PAT }}
 
   # test action works running from the graph
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: ./
-      with:
-        milliseconds: 1000
+      - uses: actions/checkout@v3
+      - run: echo '{}' > $fileName
+      - name: Create Gist
+        uses: ./
+        id: create
+        with:
+          gistPat: ${{ secrets.GIST_PAT }}
+          action: create
+          filename: ${{ env.fileName }}
+      - name: Download Gist
+        uses: ./
+        with:
+          gistPat: ${{ secrets.GIST_PAT }}
+          gistId: ${{ steps.create.outputs.gistId }}
+          action: download
+          filename: ${{ env.fileName }}
+      - run: echo '{a:b}' > $fileName
+      - name: Update Gist
+        uses: ./
+        with:
+          gistPat: ${{ secrets.GIST_PAT }}
+          gistId: ${{ steps.create.outputs.gistId }}
+          action: update
+          filename: ${{ env.fileName }}
+      - name: Delete Gist
+        uses: ./
+        with:
+          gistPat: ${{ secrets.GIST_PAT }}
+          gistId: ${{ steps.create.outputs.gistId }}
+          action: delete
+          filename: ${{ env.fileName }}
