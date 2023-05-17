@@ -1,18 +1,20 @@
 const core = require('@actions/core');
-const wait = require('./wait');
+const syncGist = require('./syncGist');
 
-
-// most @actions toolkit packages have async methods
 async function run() {
   try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+    const gistPat = core.getInput('gistPat');
+    const gistId = core.getInput('gistId');
+    const action = core.getInput('action');
+    const filename = core.getInput('filename');
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
-
-    core.setOutput('time', new Date().toTimeString());
+    if (action === 'download') {
+      return syncGist(gistPat, gistId, 'download', filename);
+    } else if (action === 'upload') {
+      return syncGist(gistPat, gistId, 'upload', filename);
+    } else {
+      throw new Error(`Action ${action} is not supported`);
+    }
   } catch (error) {
     core.setFailed(error.message);
   }

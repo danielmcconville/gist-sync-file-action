@@ -1,13 +1,21 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: "Gist Sync File"
+description: "Syncs between a local file and a gist"
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  gistPat:
+    description: "personal access token with read/write access for the gist"
     required: true
-    default: '1000'
+  gistId:
+    description: "id of the gist"
+    required: true
+  action:
+    description: 'action to perform, either "upload" or "download"'
+    required: true
+  filename:
+    description: "name of the file containing the content to upload or download"
+    required: true
 outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
+  filename:
+    description: "name of the local file containing the content to upload or download"
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: "node16"
+  main: "dist/index.js"

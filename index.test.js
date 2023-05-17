@@ -1,24 +1,21 @@
-const wait = require('./wait');
+const syncGist = require('./syncGist');
 const process = require('process');
-const cp = require('child_process');
-const path = require('path');
+const { readFile } = require('fs/promises');
 
-test('throws invalid number', async () => {
-  await expect(wait('foo')).rejects.toThrow('milliseconds not a number');
+const gistPat = process.env['GIST_PAT'];
+const gistId = process.env['GIST_ID'];
+const filename = process.env['FILENAME'];
+
+test('download from gist', async () => {
+  await expect(
+    syncGist(gistPat, gistId, 'download', filename)
+  ).resolves.not.toThrow();
+  await expect(readFile(filename, 'utf8')).resolves.not.toThrow();
 });
 
-test('wait 500 ms', async () => {
-  const start = new Date();
-  await wait(500);
-  const end = new Date();
-  var delta = Math.abs(end - start);
-  expect(delta).toBeGreaterThanOrEqual(500);
+test('upload to gist', async () => {
+  syncGist(gistPat, gistId, 'download', filename);
+  await expect(
+    syncGist(gistPat, gistId, 'upload', filename)
+  ).resolves.not.toThrow();
 });
-
-// shows how the runner will run a javascript action with env / stdout protocol
-test('test runs', () => {
-  process.env['INPUT_MILLISECONDS'] = 100;
-  const ip = path.join(__dirname, 'index.js');
-  const result = cp.execSync(`node ${ip}`, {env: process.env}).toString();
-  console.log(result);
-})
