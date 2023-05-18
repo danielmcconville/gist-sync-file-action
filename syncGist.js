@@ -6,7 +6,31 @@ const syncGist = async (auth, gistId, action, filename) => {
     auth,
   });
 
-  if (action === 'download') {
+  if (action === 'create') {
+    try {
+      const fileData = await readFile(filename, 'utf8');
+      const { data } = await octokit.request('POST /gists', {
+        files: {
+          [filename]: {
+            content: fileData,
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  } else if (action === 'delete') {
+    try {
+      await octokit.request('DELETE /gists/{gist_id}', {
+        gist_id: gistId,
+      });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  } else if (action === 'download') {
     try {
       const { data } = await octokit.request('GET /gists/{gist_id}', {
         gist_id: gistId,
@@ -14,21 +38,25 @@ const syncGist = async (auth, gistId, action, filename) => {
       const file = Object.values(data.files)[0];
       if (!file.content) throw 'File content not found';
       await writeFile(filename, file.content);
+      return file.content;
     } catch (error) {
       console.error(error);
       throw error;
     }
-  } else if (action === 'upload') {
+  } else if (action === 'update') {
     try {
-      const data = await readFile(filename, 'utf8');
-      await octokit.request('PATCH /gists/{gist_id}', {
+      const fileData = await readFile(filename, 'utf8');
+      const {
+        data: { files },
+      } = await octokit.request('PATCH /gists/{gist_id}', {
         gist_id: gistId,
         files: {
-          filename: {
-            content: data,
+          [filename]: {
+            content: fileData,
           },
         },
       });
+      return files[filename].content;
     } catch (error) {
       console.error(error);
       throw error;

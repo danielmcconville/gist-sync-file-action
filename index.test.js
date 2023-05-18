@@ -1,21 +1,45 @@
 const syncGist = require('./syncGist');
 const process = require('process');
-const { readFile } = require('fs/promises');
+const { readFile, unlink, writeFile } = require('fs/promises');
 
 const gistPat = process.env['GIST_PAT'];
-const gistId = process.env['GIST_ID'];
-const filename = process.env['FILENAME'];
+const filename = 'test.json';
 
-test('download from gist', async () => {
+const defaultFileData = '{}';
+const modifiedFileData = '{"a":"b"}';
+
+afterAll(() => unlink(filename));
+
+test('create and delete gist', async () => {
+  await writeFile(filename, defaultFileData);
+  const { id } = await syncGist(gistPat, '', 'create', filename);
+  expect(id).toBeDefined();
   await expect(
-    syncGist(gistPat, gistId, 'download', filename)
+    syncGist(gistPat, id, 'delete', filename)
   ).resolves.not.toThrow();
-  await expect(readFile(filename, 'utf8')).resolves.not.toThrow();
 });
 
-test('upload to gist', async () => {
-  syncGist(gistPat, gistId, 'download', filename);
+test('create and download from gist, then delete', async () => {
+  await writeFile(filename, defaultFileData);
+  const { id } = await syncGist(gistPat, '', 'create', filename);
+  expect(id).toBeDefined();
+  unlink(filename);
+  const content = await syncGist(gistPat, id, 'download', filename);
+  await expect(readFile(filename, 'utf8')).resolves.toEqual(defaultFileData);
+  await expect(content).toEqual(defaultFileData);
   await expect(
-    syncGist(gistPat, gistId, 'upload', filename)
+    syncGist(gistPat, id, 'delete', filename)
+  ).resolves.not.toThrow();
+});
+
+test('create then update to gist, then delete', async () => {
+  await writeFile(filename, defaultFileData);
+  const { id } = await syncGist(gistPat, '', 'create', filename);
+  expect(id).toBeDefined();
+  await writeFile(filename, modifiedFileData);
+  const content = await syncGist(gistPat, id, 'update', filename);
+  expect(content).toEqual(modifiedFileData);
+  await expect(
+    syncGist(gistPat, id, 'delete', filename)
   ).resolves.not.toThrow();
 });
