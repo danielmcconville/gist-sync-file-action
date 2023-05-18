@@ -14,6 +14,7 @@
     "url": "git+https://github.com/danielmcconville/gist-sync-file-action"
   },
   "keywords": [
+    "Gist",
     "GitHub",
     "Actions",
     "JavaScript"
