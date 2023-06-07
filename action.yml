@@ -1,4 +1,5 @@
 name: "Gist Sync File"
+author: "Daniel McConville"
 description: "Creates, updates, deletes or downloads a file from a gist"
 inputs:
   gistPat:
@@ -27,3 +28,6 @@ outputs:
 runs:
   using: "node16"
   main: "dist/index.js"
+branding:
+  icon: 'refresh-cw'
+  color: 'yellow'
