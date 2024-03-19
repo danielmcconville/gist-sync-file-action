@@ -26,8 +26,8 @@ outputs:
   gistId:
     description: "id of the gist for create action"
 runs:
-  using: "node16"
+  using: "node20"
   main: "dist/index.js"
 branding:
-  icon: 'refresh-cw'
-  color: 'yellow'
+  icon: "refresh-cw"
+  color: "yellow"
