@@ -17,7 +17,7 @@ See [action.yml](action.yml)
 
 <!-- start usage -->
 ```yaml
-- uses: danielmcconville/gist-sync-file-action@v1.0.0
+- uses: danielmcconville/gist-sync-file-action@v2.0.0
   with:
     # Personal access token with read/write access for Gist
     gistPat: ''
@@ -46,14 +46,14 @@ steps:
 - uses: actions/checkout@v4
 - run: echo '{}' > $fileName
 - name: Create Gist
-  uses: danielmcconville/gist-sync-file-action@v1.0.0
+  uses: danielmcconville/gist-sync-file-action@v2.0.0
   id: create
   with:
     gistPat: ${{ secrets.GIST_PAT }}
     action: create
     filename: ${{ env.fileName }}
 - name: Download Gist
-  uses: danielmcconville/gist-sync-file-action@v1.0.0
+  uses: danielmcconville/gist-sync-file-action@v2.0.0
   with:
     gistPat: ${{ secrets.GIST_PAT }}
     gistId: ${{ steps.create.outputs.gistId }}
@@ -62,14 +62,14 @@ steps:
     fileContent: '{}'
 - run: echo '{a:b}' > $fileName
 - name: Update Gist
-  uses: danielmcconville/gist-sync-file-action@v1.0.0
+  uses: danielmcconville/gist-sync-file-action@v2.0.0
   with:
     gistPat: ${{ secrets.GIST_PAT }}
     gistId: ${{ steps.create.outputs.gistId }}
     action: update
     filename: ${{ env.fileName }}
 - name: Delete Gist
-  uses: danielmcconville/gist-sync-file-action@v1.0.0
+  uses: danielmcconville/gist-sync-file-action@v2.0.0
   with:
     gistPat: ${{ secrets.GIST_PAT }}
     gistId: ${{ steps.create.outputs.gistId }}
