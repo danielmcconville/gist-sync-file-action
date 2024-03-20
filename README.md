@@ -43,7 +43,7 @@ See [action.yml](action.yml)
 
 ```YAML
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 - run: echo '{}' > $fileName
 - name: Create Gist
   uses: danielmcconville/gist-sync-file-action@v1.0.0
