@@ -4,6 +4,7 @@ const { readFile, unlink, writeFile } = require('fs/promises');
 
 const gistPat = process.env['GIST_PAT'];
 const filename = 'test.json';
+const nestedFilename = 'folder/test.json';
 
 const defaultFileData = '{}';
 const modifiedFileData = '{"a":"b"}';
@@ -12,6 +13,15 @@ afterAll(() => unlink(filename));
 
 test('create and delete gist', async () => {
   await writeFile(filename, defaultFileData);
+  const { id } = await syncGist(gistPat, '', 'create', filename);
+  expect(id).toBeDefined();
+  await expect(
+    syncGist(gistPat, id, 'delete', filename)
+  ).resolves.not.toThrow();
+});
+
+test('create and delete gist from nested file', async () => {
+  await writeFile(nestedFilename, defaultFileData);
   const { id } = await syncGist(gistPat, '', 'create', filename);
   expect(id).toBeDefined();
   await expect(
@@ -61,5 +71,18 @@ test('create then update to gist, then delete', async () => {
   expect(content).toEqual(modifiedFileData);
   await expect(
     syncGist(gistPat, id, 'delete', filename)
+  ).resolves.not.toThrow();
+});
+
+
+test('create then update nested file to gist, then delete', async () => {
+  await writeFile(nestedFilename, defaultFileData);
+  const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
+  expect(id).toBeDefined();
+  await writeFile(nestedFilename, modifiedFileData);
+  const content = await syncGist(gistPat, id, 'update', nestedFilename);
+  expect(content).toEqual(modifiedFileData);
+  await expect(
+    syncGist(gistPat, id, 'delete', nestedFilename)
   ).resolves.not.toThrow();
 });

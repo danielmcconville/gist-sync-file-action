@@ -13,12 +13,18 @@ const syncGist = async (
     auth,
   });
 
+  var parsedFileName = filename
+
+  if (filename.includes("/")) {
+     parsedFileName = filename.split("/").at(-1)
+  }
+
   if (action === 'create') {
     try {
       const fileData = await readFile(filename, 'utf8');
       const { data } = await octokit.request('POST /gists', {
         files: {
-          [filename]: {
+          [parsedFileName]: {
             content: fileData,
           },
         },
@@ -53,7 +59,7 @@ const syncGist = async (
         console.log('Gist not found, creating...');
         await writeFile(filename, fileContent);
         const { id, files } = await syncGist(auth, '', 'create', filename);
-        const content = files[filename].content;
+        const content = files[parsedFileName].content;
         return { content, id };
       } else {
         console.error({ error });
@@ -68,12 +74,12 @@ const syncGist = async (
       } = await octokit.request('PATCH /gists/{gist_id}', {
         gist_id: gistId,
         files: {
-          [filename]: {
+          [parsedFileName]: {
             content: fileData,
           },
         },
       });
-      return files[filename].content;
+      return files[parsedFileName].content;
     } catch (error) {
       console.error({ error });
       throw error;
