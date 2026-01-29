@@ -9,7 +9,7 @@ inputs:
     description: 'action to perform, either "create", "delete", "update" or "download"'
     required: true
   filename:
-    description: "name of the file containing the content to upload or download"
+    description: "name of the file containing the content to upload or download, can be a file path such as `dir/subdir/file.md`"
     required: true
   gistId:
     description: "id of the gist - only required for delete, update and download"

@@ -1,10 +1,11 @@
 const syncGist = require('./syncGist');
 const process = require('process');
-const { readFile, unlink, writeFile } = require('fs/promises');
+const { readFile, unlink, writeFile, mkdir, rm} = require('fs/promises');
 
 const gistPat = process.env['GIST_PAT'];
 const filename = 'test.json';
-const nestedFilename = 'folder/test.json';
+const directoryName = 'test_folder';
+const nestedFilename = 'test_folder/test.json';
 
 const defaultFileData = '{}';
 const modifiedFileData = '{"a":"b"}';
@@ -21,12 +22,15 @@ test('create and delete gist', async () => {
 });
 
 test('create and delete gist from nested file', async () => {
+  await ensureDir(directoryName);
   await writeFile(nestedFilename, defaultFileData);
   const { id } = await syncGist(gistPat, '', 'create', filename);
   expect(id).toBeDefined();
   await expect(
     syncGist(gistPat, id, 'delete', filename)
   ).resolves.not.toThrow();
+
+  await rm(directoryName, { recursive: true, force: true });
 });
 
 test('download from gist with createIfNotExists set to true, then delete', async () => {
@@ -76,6 +80,7 @@ test('create then update to gist, then delete', async () => {
 
 
 test('create then update nested file to gist, then delete', async () => {
+  await ensureDir(directoryName);
   await writeFile(nestedFilename, defaultFileData);
   const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
   expect(id).toBeDefined();
@@ -85,4 +90,19 @@ test('create then update nested file to gist, then delete', async () => {
   await expect(
     syncGist(gistPat, id, 'delete', nestedFilename)
   ).resolves.not.toThrow();
+
+  await rm(directoryName, { recursive: true, force: true });
 });
+
+
+
+async function ensureDir(path) {
+  try {
+    await mkdir(path, { recursive: true });
+  } catch (err) {
+    // ignore error if the directory already exists
+    if (err.code !== 'EEXIST') {
+      throw err;
+    }
+  }
+}
