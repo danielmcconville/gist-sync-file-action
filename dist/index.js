@@ -30091,11 +30091,11 @@ const syncGist = async (
     auth,
   });
 
-  if (filename.prototype.includes("/")) {
-    var parsedFileName = filename.prototype.split("/")
-  } else {
-    var parsedFileName = filename
-  };
+  var parsedFileName = filename
+
+  if (filename.includes("/")) {
+     parsedFileName = filename.split("/").at(-1)
+  }
 
   if (action === 'create') {
     try {
