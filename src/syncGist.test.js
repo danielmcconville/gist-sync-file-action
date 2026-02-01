@@ -1,6 +1,6 @@
 const syncGist = require('./syncGist');
 const process = require('process');
-const { readFile, unlink, writeFile, mkdir, rm} = require('fs/promises');
+const { readFile, unlink, writeFile, mkdir, rm } = require('fs/promises');
 
 const gistPat = process.env['GIST_PAT'];
 const filename = 'test.json';
