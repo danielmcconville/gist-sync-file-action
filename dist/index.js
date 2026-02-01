@@ -30078,6 +30078,7 @@ function wrappy (fn, cb) {
 
 const { Octokit } = __nccwpck_require__(6762);
 const { readFile, writeFile } = __nccwpck_require__(3292);
+const path = __nccwpck_require__(1017);
 
 const syncGist = async (
   auth,
@@ -30091,11 +30092,7 @@ const syncGist = async (
     auth,
   });
 
-  var parsedFileName = filename
-
-  if (filename.includes("/")) {
-     parsedFileName = filename.split("/").at(-1)
-  }
+  let parsedFileName = path.basename(filename);
 
   if (action === 'create') {
     try {

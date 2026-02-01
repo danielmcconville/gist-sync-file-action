@@ -22,12 +22,12 @@ test('create and delete gist', async () => {
 });
 
 test('create and delete gist from nested file', async () => {
-  await ensureDir(directoryName);
+  await mkdir(directoryName, { recursive: true });
   await writeFile(nestedFilename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', filename);
+  const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
   expect(id).toBeDefined();
   await expect(
-    syncGist(gistPat, id, 'delete', filename)
+    syncGist(gistPat, id, 'delete', nestedFilename)
   ).resolves.not.toThrow();
 
   await rm(directoryName, { recursive: true, force: true });
@@ -80,7 +80,7 @@ test('create then update to gist, then delete', async () => {
 
 
 test('create then update nested file to gist, then delete', async () => {
-  await ensureDir(directoryName);
+  await mkdir(directoryName, { recursive: true });
   await writeFile(nestedFilename, defaultFileData);
   const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
   expect(id).toBeDefined();
@@ -93,16 +93,3 @@ test('create then update nested file to gist, then delete', async () => {
 
   await rm(directoryName, { recursive: true, force: true });
 });
-
-
-
-async function ensureDir(path) {
-  try {
-    await mkdir(path, { recursive: true });
-  } catch (err) {
-    // ignore error if the directory already exists
-    if (err.code !== 'EEXIST') {
-      throw err;
-    }
-  }
-}

@@ -1,5 +1,6 @@
 const { Octokit } = require('@octokit/core');
 const { readFile, writeFile } = require('fs/promises');
+const path = require('path');
 
 const syncGist = async (
   auth,
@@ -13,11 +14,7 @@ const syncGist = async (
     auth,
   });
 
-  var parsedFileName = filename
-
-  if (filename.includes("/")) {
-     parsedFileName = filename.split("/").at(-1)
-  }
+  let parsedFileName = path.basename(filename);
 
   if (action === 'create') {
     try {
