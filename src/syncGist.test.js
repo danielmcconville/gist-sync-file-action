@@ -1,94 +1,153 @@
 const syncGist = require('./syncGist');
-const process = require('process');
-const { readFile, unlink, writeFile, mkdir, rm } = require('fs/promises');
 
-const gistPat = process.env['GIST_PAT'];
-const filename = 'test.json';
-const directoryName = 'test_folder';
-const nestedFilename = 'test_folder/test.json';
+jest.mock('@octokit/core', () => {
+  const mockRequest = jest.fn();
+  return {
+    Octokit: jest.fn(() => ({ request: mockRequest })),
+    __mockRequest: mockRequest,
+  };
+});
 
+jest.mock('fs/promises', () => ({
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+}));
+
+const { __mockRequest: mockRequest } = require('@octokit/core');
+const { readFile, writeFile } = require('fs/promises');
+
+const token = 'fake-token';
 const defaultFileData = '{}';
 const modifiedFileData = '{"a":"b"}';
 
-afterAll(() => unlink(filename));
-
-test('create and delete gist', async () => {
-  await writeFile(filename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', filename);
-  expect(id).toBeDefined();
-  await expect(
-    syncGist(gistPat, id, 'delete', filename)
-  ).resolves.not.toThrow();
+beforeEach(() => {
+  jest.clearAllMocks();
+  readFile.mockResolvedValue(defaultFileData);
+  writeFile.mockResolvedValue(undefined);
 });
 
-test('create and delete gist from nested file', async () => {
-  await mkdir(directoryName, { recursive: true });
-  await writeFile(nestedFilename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
-  expect(id).toBeDefined();
-  await expect(
-    syncGist(gistPat, id, 'delete', nestedFilename)
-  ).resolves.not.toThrow();
+test('create gist', async () => {
+  mockRequest.mockResolvedValue({
+    data: { id: 'gist-123', files: { 'test.json': { content: defaultFileData } } },
+  });
 
-  await rm(directoryName, { recursive: true, force: true });
+  const result = await syncGist(token, '', 'create', 'test.json');
+
+  expect(result.id).toBe('gist-123');
+  expect(readFile).toHaveBeenCalledWith('test.json', 'utf8');
+  expect(mockRequest).toHaveBeenCalledWith('POST /gists', {
+    files: { 'test.json': { content: defaultFileData } },
+  });
 });
 
-test('download from gist with createIfNotExists set to true, then delete', async () => {
-  const nonExistentGistId = '2926c7dba91544a59d830fe046b1c4e2';
-  await writeFile(filename, defaultFileData);
-  const { content, id } = await syncGist(
-    gistPat,
-    nonExistentGistId,
+test('create gist from nested file uses basename as gist key', async () => {
+  mockRequest.mockResolvedValue({
+    data: { id: 'gist-456', files: { 'test.json': { content: defaultFileData } } },
+  });
+
+  const result = await syncGist(token, '', 'create', 'test_folder/test.json');
+
+  expect(result.id).toBe('gist-456');
+  expect(readFile).toHaveBeenCalledWith('test_folder/test.json', 'utf8');
+  expect(mockRequest).toHaveBeenCalledWith('POST /gists', {
+    files: { 'test.json': { content: defaultFileData } },
+  });
+});
+
+test('delete gist', async () => {
+  mockRequest.mockResolvedValue({});
+
+  await expect(
+    syncGist(token, 'gist-123', 'delete', 'test.json')
+  ).resolves.not.toThrow();
+
+  expect(mockRequest).toHaveBeenCalledWith('DELETE /gists/{gist_id}', {
+    gist_id: 'gist-123',
+  });
+});
+
+test('download gist writes file content', async () => {
+  mockRequest.mockResolvedValue({
+    data: {
+      files: { 'test.json': { content: defaultFileData } },
+    },
+  });
+
+  const result = await syncGist(token, 'gist-123', 'download', 'test.json');
+
+  expect(result).toEqual({ content: defaultFileData, id: 'gist-123' });
+  expect(writeFile).toHaveBeenCalledWith('test.json', defaultFileData);
+  expect(mockRequest).toHaveBeenCalledWith('GET /gists/{gist_id}', {
+    gist_id: 'gist-123',
+  });
+});
+
+test('download with createIfNotExists creates gist when not found', async () => {
+  const notFoundError = new Error('Not Found');
+  notFoundError.status = 404;
+
+  mockRequest
+    .mockRejectedValueOnce(notFoundError)
+    .mockResolvedValueOnce({
+      data: { id: 'new-gist', files: { 'test.json': { content: defaultFileData } } },
+    });
+
+  const result = await syncGist(
+    token,
+    'nonexistent-id',
     'download',
-    filename,
+    'test.json',
     true,
     '{}'
   );
-  await expect(content).toEqual(defaultFileData);
-  await expect(id).toBeDefined();
-  await expect(id).not.toEqual(nonExistentGistId);
-  unlink(filename);
-  await expect(
-    syncGist(gistPat, id, 'delete', filename)
-  ).resolves.not.toThrow();
+
+  expect(result.content).toEqual(defaultFileData);
+  expect(result.id).toBe('new-gist');
+  expect(result.id).not.toBe('nonexistent-id');
+  expect(writeFile).toHaveBeenCalledWith('test.json', '{}');
+  expect(mockRequest).toHaveBeenCalledWith('POST /gists', {
+    files: { 'test.json': { content: defaultFileData } },
+  });
 });
 
-test('create and download from gist, then delete', async () => {
-  await writeFile(filename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', filename);
-  expect(id).toBeDefined();
-  unlink(filename);
-  const { content } = await syncGist(gistPat, id, 'download', filename);
-  await expect(readFile(filename, 'utf8')).resolves.toEqual(defaultFileData);
-  await expect(content).toEqual(defaultFileData);
-  await expect(
-    syncGist(gistPat, id, 'delete', filename)
-  ).resolves.not.toThrow();
-});
+test('update gist', async () => {
+  mockRequest.mockResolvedValue({
+    data: {
+      files: { 'test.json': { content: modifiedFileData } },
+    },
+  });
+  readFile.mockResolvedValue(modifiedFileData);
 
-test('create then update to gist, then delete', async () => {
-  await writeFile(filename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', filename);
-  expect(id).toBeDefined();
-  await writeFile(filename, modifiedFileData);
-  const content = await syncGist(gistPat, id, 'update', filename);
+  const content = await syncGist(token, 'gist-123', 'update', 'test.json');
+
   expect(content).toEqual(modifiedFileData);
-  await expect(
-    syncGist(gistPat, id, 'delete', filename)
-  ).resolves.not.toThrow();
+  expect(readFile).toHaveBeenCalledWith('test.json', 'utf8');
+  expect(mockRequest).toHaveBeenCalledWith('PATCH /gists/{gist_id}', {
+    gist_id: 'gist-123',
+    files: { 'test.json': { content: modifiedFileData } },
+  });
 });
 
-test('create then update nested file to gist, then delete', async () => {
-  await mkdir(directoryName, { recursive: true });
-  await writeFile(nestedFilename, defaultFileData);
-  const { id } = await syncGist(gistPat, '', 'create', nestedFilename);
-  expect(id).toBeDefined();
-  await writeFile(nestedFilename, modifiedFileData);
-  const content = await syncGist(gistPat, id, 'update', nestedFilename);
-  expect(content).toEqual(modifiedFileData);
-  await expect(
-    syncGist(gistPat, id, 'delete', nestedFilename)
-  ).resolves.not.toThrow();
+test('update gist with nested file uses basename as gist key', async () => {
+  mockRequest.mockResolvedValue({
+    data: {
+      files: { 'test.json': { content: modifiedFileData } },
+    },
+  });
+  readFile.mockResolvedValue(modifiedFileData);
 
-  await rm(directoryName, { recursive: true, force: true });
+  const content = await syncGist(token, 'gist-123', 'update', 'test_folder/test.json');
+
+  expect(content).toEqual(modifiedFileData);
+  expect(readFile).toHaveBeenCalledWith('test_folder/test.json', 'utf8');
+  expect(mockRequest).toHaveBeenCalledWith('PATCH /gists/{gist_id}', {
+    gist_id: 'gist-123',
+    files: { 'test.json': { content: modifiedFileData } },
+  });
+});
+
+test('unsupported action throws', async () => {
+  await expect(
+    syncGist(token, '', 'invalid', 'test.json')
+  ).rejects.toThrow('Action invalid is not supported');
 });

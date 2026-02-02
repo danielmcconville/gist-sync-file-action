@@ -46,7 +46,7 @@ const syncGist = async (
         gist_id: gistId,
       });
       const file = data.files[parsedFileName];
-      if (!file.content) throw new 'File content not found';
+      if (!file.content) throw new Error('File content not found');
       await writeFile(filename, file.content);
       console.log(`Downloaded ${filename} from gist ${gistId}`);
       return { content: file.content, id: gistId };
