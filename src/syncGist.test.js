@@ -34,11 +34,11 @@ test('create and delete gist from nested file', async () => {
 });
 
 test('download from gist with createIfNotExists set to true, then delete', async () => {
-  const nonExistantGistId = '2926c7dba91544a59d830fe046b1c4e2';
+  const nonExistentGistId = '2926c7dba91544a59d830fe046b1c4e2';
   await writeFile(filename, defaultFileData);
   const { content, id } = await syncGist(
     gistPat,
-    nonExistantGistId,
+    nonExistentGistId,
     'download',
     filename,
     true,
@@ -46,7 +46,7 @@ test('download from gist with createIfNotExists set to true, then delete', async
   );
   await expect(content).toEqual(defaultFileData);
   await expect(id).toBeDefined();
-  await expect(id).not.toEqual(nonExistantGistId);
+  await expect(id).not.toEqual(nonExistentGistId);
   unlink(filename);
   await expect(
     syncGist(gistPat, id, 'delete', filename)
@@ -77,7 +77,6 @@ test('create then update to gist, then delete', async () => {
     syncGist(gistPat, id, 'delete', filename)
   ).resolves.not.toThrow();
 });
-
 
 test('create then update nested file to gist, then delete', async () => {
   await mkdir(directoryName, { recursive: true });
