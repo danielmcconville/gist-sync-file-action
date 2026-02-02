@@ -28,7 +28,7 @@ See [action.yml](action.yml)
     # Action to perform, either "create", "delete", "update" or "download"
     action: ''
 
-    # name of the file containing the content to upload or download
+    # name of the file containing the content to upload or download, can be a file path such as dir/subdir/file.md
     filename: ''
 
     # optional, set to true if you are using the download action and you want a gist created if it doesn't

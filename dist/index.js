@@ -30078,6 +30078,7 @@ function wrappy (fn, cb) {
 
 const { Octokit } = __nccwpck_require__(6762);
 const { readFile, writeFile } = __nccwpck_require__(3292);
+const path = __nccwpck_require__(1017);
 
 const syncGist = async (
   auth,
@@ -30091,12 +30092,14 @@ const syncGist = async (
     auth,
   });
 
+  let parsedFileName = path.basename(filename);
+
   if (action === 'create') {
     try {
       const fileData = await readFile(filename, 'utf8');
       const { data } = await octokit.request('POST /gists', {
         files: {
-          [filename]: {
+          [parsedFileName]: {
             content: fileData,
           },
         },
@@ -30131,7 +30134,7 @@ const syncGist = async (
         console.log('Gist not found, creating...');
         await writeFile(filename, fileContent);
         const { id, files } = await syncGist(auth, '', 'create', filename);
-        const content = files[filename].content;
+        const content = files[parsedFileName].content;
         return { content, id };
       } else {
         console.error({ error });
@@ -30146,12 +30149,12 @@ const syncGist = async (
       } = await octokit.request('PATCH /gists/{gist_id}', {
         gist_id: gistId,
         files: {
-          [filename]: {
+          [parsedFileName]: {
             content: fileData,
           },
         },
       });
-      return files[filename].content;
+      return files[parsedFileName].content;
     } catch (error) {
       console.error({ error });
       throw error;
