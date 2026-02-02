@@ -17,7 +17,7 @@ See [action.yml](action.yml)
 
 <!-- start usage -->
 ```yaml
-- uses: danielmcconville/gist-sync-file-action@v2.0.0
+- uses: danielmcconville/gist-sync-file-action@v2.1.0
   with:
     # Personal access token with read/write access for Gist
     gistPat: ''
