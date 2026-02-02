@@ -30092,7 +30092,7 @@ const syncGist = async (
     auth,
   });
 
-  let parsedFileName = path.basename(filename);
+  const parsedFileName = path.basename(filename);
 
   if (action === 'create') {
     try {
@@ -30123,8 +30123,8 @@ const syncGist = async (
       const { data } = await octokit.request('GET /gists/{gist_id}', {
         gist_id: gistId,
       });
-      const file = Object.values(data.files)[0];
-      if (!file.content) throw 'File content not found';
+      const file = data.files[parsedFileName];
+      if (!file.content) throw new Error('File content not found');
       await writeFile(filename, file.content);
       console.log(`Downloaded ${filename} from gist ${gistId}`);
       return { content: file.content, id: gistId };
